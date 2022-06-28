@@ -273,8 +273,8 @@ func (g *genericScheduler) selectNodesForPreemption(
 	return nodeToVictims, nil
 }
 
-// 优先移除破坏 pdb 类型的 pod
-// 优先移除优先级低的 pod
+// 尽可能保证 pdb 的规则
+// 尽可能移除优先级低的 pod
 func (g *genericScheduler) selectVictimsOnNode(
 	ctx context.Context,
 	prof *profile.Profile,
@@ -354,7 +354,7 @@ func (g *genericScheduler) selectVictimsOnNode(
 		}
 		return fits, nil
 	}
-    // 优先移除破坏了 pdb 规则的 pods
+    // 优先尝试破环了 pdb 规则 pod 是否可以继续在该节点上运行，尽可能不驱逐它
 	for _, p := range violatingVictims {
 		if fits, err := reprievePod(p); err != nil {
 			klog.Warningf("Failed to reprieve pod %q: %v", p.Name, err)
@@ -363,7 +363,7 @@ func (g *genericScheduler) selectVictimsOnNode(
 			numViolatingVictim++
 		}
 }
-	// 移除正常的 pods
+	// 移除正常的 pods，尽可能移除优先级比较低的 pod
 	for _, p := range nonViolatingVictims {
 		if _, err := reprievePod(p); err != nil {
 			klog.Warningf("Failed to reprieve pod %q: %v", p.Name, err)
